@@ -1,46 +1,77 @@
-# PolyTone – Multi‑Frequency Sine Wave Generator
+# PolyTone 🔉🌀
 
-PolyTone is a single‑file HTML web application that lets you play multiple sine wave frequencies simultaneously.  
-It covers a wide range from **1 Hz to 40 kHz** with **500 Hz steps above 1 kHz** – perfect for testing audio equipment, psychoacoustic experiments, or just exploring the limits of human hearing.
+**PolyTone** is a minimalist web-based audio tool that lets you play multiple sine wave tones **simultaneously**. Toggle any frequency from **1 Hz to 40 kHz** on and off, with a pink‑noise inspired gain curve to balance the spectrum. Includes a master compressor and a sine‑wave tremolo for dynamic volume shaping.
 
-## Features
-
-- **82 frequencies** in one page:
-  - 1 Hz, 10 Hz, 100 Hz (very low, mostly for measurement)
-  - 1.0 kHz, 1.5 kHz, 2.0 kHz … 40.0 kHz (500 Hz steps)
-- **Click any button** to toggle that tone on/off – multiple tones can play together.
-- **PLAY ALL** – instantly start every frequency at once (useful for stress tests).
-- **STOP ALL** – kill all tones with one click.
-- Visual feedback: active buttons are highlighted, and the status bar shows how many tones are playing.
-- Pure sine waves (low distortion) with a moderate gain to avoid clipping.
-- Works offline – just save the HTML file and open it in any modern browser (Chrome, Edge, Firefox, Safari).
-
-## How to Use
-
-1. Open the `index.html` file in your browser.
-2. Click any frequency button – the tone starts immediately.
-3. Click the same button again to stop that tone.
-4. Use **PLAY ALL** to enable every frequency at once.
-5. Use **STOP ALL** to silence everything.
-
-> **Note:** Frequencies above ~20 kHz may be inaudible on most consumer hardware. The app still generates them, but your speakers/headphones may not reproduce them.
-
-## Technical Details
-
-- Built with the Web Audio API.
-- Each frequency runs on its own `OscillatorNode` with a `GainNode` to control volume.
-- The gain per tone is set to `0.3` to reduce clipping when many tones are active.
-- All oscillers are of type `sine` for clean, harmonic‑free waveforms.
-
-## Compatibility
-
-- Works on all modern desktop and mobile browsers that support the Web Audio API.
-- On iOS, make sure the device is not in silent mode and that you interact with the page first (due to autoplay policies).
-
-## License
-
-This project is open source and available under the [MIT License](LICENSE).
+![screenshot](screenshot.png)  
+*(Add a screenshot of the interface here)*
 
 ---
 
-*Enjoy exploring the world of frequencies!*
+## ✨ Features
+
+- **Concurrent playback** – Any number of tones can be played at the same time.
+- **Wide frequency range** – 1, 10, 25, 50, 100 Hz, then 1.0–40.0 kHz in **500 Hz steps**.
+- **Pink‑weighted gain** – Higher frequencies are gently attenuated (∝ 1/√f) to avoid harshness and balance the mix.
+- **Toggle on/off** – Click a frequency button to start it; click again to stop.
+- **PLAY ALL / STOP ALL** – One‑click full spectrum or silence.
+- **Master Compressor** – Fixed‑setting dynamics processor (threshold -20 dB, ratio 4:1) to tame peaks.
+- **Sine‑wave Tremolo** – Modulate overall volume with adjustable period (0.1–10 s) and depth (0–100%).
+- **No dependencies** – Pure HTML, CSS, and vanilla JavaScript.
+
+---
+
+## 🚀 How to Use
+
+1. Clone the repository or download `index.html`.
+2. Open `index.html` in any modern browser (Chrome, Firefox, Safari, Edge).
+3. Click any frequency button to start that tone.
+4. Click an active button to stop that tone.
+5. Use **PLAY ALL** to start every frequency, **STOP ALL** to silence everything.
+6. Toggle the compressor and tremolo with their checkboxes and adjust parameters.
+
+> ⚠️ **Note**:  
+> - Very low frequencies (1–50 Hz) may be felt as vibrations rather than heard.  
+> - Frequencies above ~20 kHz may be inaudible on most consumer speakers/headphones.
+
+---
+
+## 📋 Frequency List
+
+The app includes **84 frequencies** in total:
+
+- **Low**: 1, 10, 25, 50, 100 Hz  
+- **High**: 1.0, 1.5, 2.0, … 40.0 kHz (every 500 Hz)
+
+All tones are pure sine waves.
+
+---
+
+## 🧠 Technical Details
+
+- **Audio engine**: Web Audio API (`OscillatorNode` + `GainNode` per tone).  
+- **Gain shaping**: `gain = 0.05 * sqrt(1000 / f)` for f > 1 kHz.  
+- **Compressor**: Master‑only, fixed preset (`threshold: -20, ratio: 4, attack: 0.003, release: 0.25, knee: 30`).  
+- **Tremolo**: Low‑frequency oscillator modulates a master gain node.  
+- **Code structure**: Modular `ToneManager` and `UIManager` classes for clean separation.
+
+---
+
+## 🌐 Browser Compatibility
+
+Works in all browsers that support the Web Audio API:
+
+- ✅ Chrome (desktop & Android)
+- ✅ Firefox
+- ✅ Safari (desktop & iOS 15+)
+- ✅ Edge
+- ✅ Opera
+
+---
+
+## 📄 License
+
+MIT License – feel free to use, modify, and distribute.
+
+---
+
+**Happy tone‑stacking!** 🎶
