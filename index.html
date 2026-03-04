@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PolyTone · 1Hz–40kHz + pink gain + tremolo + compressor on/off</title>
+    <title>PolyTone · 1Hz–40kHz + pink gain + tremolo + compressor</title>
     <style>
         * {
             box-sizing: border-box;
@@ -103,7 +103,6 @@
             transform: translateY(3px);
             box-shadow: none;
         }
-        /* control panels */
         .control-panel {
             background: #e9f0f5;
             border-radius: 50px;
@@ -206,7 +205,7 @@
         </div>
     </div>
 
-    <!-- simple compressor on/off -->
+    <!-- compressor on/off -->
     <div class="control-panel">
         <div class="checkbox-group">
             <input type="checkbox" id="compressorEnable" />
@@ -236,8 +235,9 @@
 
     <div class="note">
         ⚡ <strong>pink‑weighted gain</strong> (0.05 base, ∝ 1/√f). Tremolo modulates master volume.  
-        Compressor is master‑only with fixed default settings. Click any frequency to toggle on/off.  
-        <strong>PLAY ALL</strong> starts every frequency.
+        Compressor is master‑only with fixed default settings.  
+        <strong>Frequencies:</strong> 1, 10, 25, 50, 100 Hz, then 1.0–40.0 kHz in 500 Hz steps.  
+        Click any frequency to toggle on/off. <strong>PLAY ALL</strong> starts every frequency.
     </div>
 </div>
 
@@ -250,7 +250,6 @@
             return baseGain * Math.sqrt(1000 / freq);
         }
 
-        // Fixed compressor preset (default)
         const compressorPreset = {
             threshold: -20,
             ratio: 4,
@@ -260,7 +259,8 @@
         };
 
         // ==================== FREQUENCY LIST ====================
-        const lowFreqs = [1, 10, 100];
+        // Updated to include 25 Hz and 50 Hz
+        const lowFreqs = [1, 10, 25, 50, 100];
         const highFreqs = [];
         for (let f = 1000; f <= 40000; f += 500) highFreqs.push(f);
         const allFreqs = [...lowFreqs, ...highFreqs];
@@ -272,18 +272,16 @@
             return { freq, label };
         });
 
-        // ==================== TONE MANAGER with COMPRESSOR ON/OFF ====================
+        // ==================== TONE MANAGER ====================
         class ToneManager {
             constructor() {
                 this.audioCtx = null;
-                this.activeTones = new Map(); // freq -> { oscillator, gainNode, button }
+                this.activeTones = new Map();
                 this.statusCallback = null;
 
-                // compressor state (simple on/off)
                 this.compressorEnabled = false;
                 this.masterCompressor = null;
 
-                // tremolo state
                 this.tremoloEnabled = false;
                 this.tremoloPeriod = 2.0;
                 this.tremoloDepth = 50;
@@ -307,7 +305,6 @@
                 return this.audioCtx;
             }
 
-            // Apply fixed compressor settings
             #applyCompressorSettings(compNode) {
                 if (!compNode) return;
                 compNode.threshold.setValueAtTime(compressorPreset.threshold, this.audioCtx.currentTime);
@@ -317,7 +314,6 @@
                 compNode.knee.setValueAtTime(compressorPreset.knee, this.audioCtx.currentTime);
             }
 
-            // Rebuild entire audio graph (compressor + tremolo)
             async reconfigureAll(compEnable, tremEnable, tremPeriod, tremDepth) {
                 if (!this.audioCtx) return;
 
@@ -326,34 +322,27 @@
                 this.tremoloPeriod = tremPeriod;
                 this.tremoloDepth = tremDepth;
 
-                // If no active tones, just set up master nodes for future starts
                 if (this.activeTones.size === 0) {
                     this.#rebuildMasterNodes();
                     return;
                 }
 
-                // Save active frequencies and buttons
                 const activeFreqs = Array.from(this.activeTones.keys());
                 const activeButtons = activeFreqs.map(f => this.activeTones.get(f).button);
 
-                // Stop all tones quietly
                 for (const freq of activeFreqs) {
                     this.#removeTone(freq, false, true);
                 }
 
-                // Rebuild master nodes
                 this.#rebuildMasterNodes();
 
-                // Restart all tones
                 for (let i = 0; i < activeFreqs.length; i++) {
                     await this.#startTone(activeFreqs[i], activeButtons[i], true);
                 }
                 this.#updateStatus();
             }
 
-            // Create or update master compressor and tremolo nodes
             #rebuildMasterNodes() {
-                // Clean up existing master nodes
                 if (this.masterCompressor) {
                     try { this.masterCompressor.disconnect(); } catch (e) {}
                     this.masterCompressor = null;
@@ -374,13 +363,11 @@
                 const ctx = this.audioCtx;
                 if (!ctx) return;
 
-                // Create master compressor if enabled
                 if (this.compressorEnabled) {
                     this.masterCompressor = ctx.createDynamicsCompressor();
                     this.#applyCompressorSettings(this.masterCompressor);
                 }
 
-                // Create tremolo gain if enabled
                 if (this.tremoloEnabled) {
                     this.tremoloGain = ctx.createGain();
                     const base = 1 - (this.tremoloDepth / 200);
@@ -399,14 +386,12 @@
                     this.tremoloLFO.start();
                 }
 
-                // If tremoloGain exists, connect it to destination (once)
                 if (this.tremoloGain && !this.tremoloGain._connected) {
                     this.tremoloGain.connect(ctx.destination);
                     this.tremoloGain._connected = true;
                 }
             }
 
-            // Start a tone with current graph configuration
             async #startTone(freq, button, skipStatus = false) {
                 const ctx = this.audioCtx;
                 const gainValue = gainForFrequency(freq);
@@ -418,7 +403,6 @@
                 oscillator.frequency.setValueAtTime(freq, ctx.currentTime);
                 oscillator.connect(gainNode);
 
-                // Determine routing: gainNode -> (masterCompressor?) -> (tremoloGain?) -> destination
                 let nextNode = gainNode;
                 if (this.masterCompressor) {
                     nextNode.connect(this.masterCompressor);
@@ -426,7 +410,6 @@
                 }
                 if (this.tremoloGain) {
                     nextNode.connect(this.tremoloGain);
-                    // tremoloGain already connected to destination
                 } else {
                     nextNode.connect(ctx.destination);
                 }
@@ -492,7 +475,6 @@
                 this.#updateStatus();
             }
 
-            // Setters for UI controls
             async setCompressorEnabled(enabled) {
                 await this.reconfigureAll(enabled, this.tremoloEnabled, this.tremoloPeriod, this.tremoloDepth);
             }
@@ -545,12 +527,10 @@
                     await this.toneManager.playAll(allButtons);
                 });
 
-                // Compressor toggle
                 this.compressorEnable.addEventListener('change', async (e) => {
                     await this.toneManager.setCompressorEnabled(e.target.checked);
                 });
 
-                // Tremolo controls
                 const updateTremolo = async () => {
                     const enabled = this.tremEnable.checked;
                     const period = parseFloat(this.tremPeriod.value) || 2.0;
@@ -616,7 +596,6 @@
         );
         uiManager.buildButtons(freqItems);
 
-        // Initial state: compressor off, tremolo off
         toneManager.compressorEnabled = false;
         toneManager.tremoloEnabled = false;
 
