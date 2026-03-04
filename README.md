@@ -1,73 +1,46 @@
-# PolyTone 🔉🎛️
+# PolyTone – Multi‑Frequency Sine Wave Generator
 
-**PolyTone** is a minimalist web-based audio tool that lets you play multiple sine wave tones **simultaneously**. Toggle any frequency from **1 Hz to 40 kHz** on and off, and hear them all blend together in real time. Built with the Web Audio API, it’s perfect for audio experimentation, hearing tests, or just satisfying your curiosity about sound.
+PolyTone is a single‑file HTML web application that lets you play multiple sine wave frequencies simultaneously.  
+It covers a wide range from **1 Hz to 40 kHz** with **500 Hz steps above 1 kHz** – perfect for testing audio equipment, psychoacoustic experiments, or just exploring the limits of human hearing.
 
----
+## Features
 
-## ✨ Features
+- **82 frequencies** in one page:
+  - 1 Hz, 10 Hz, 100 Hz (very low, mostly for measurement)
+  - 1.0 kHz, 1.5 kHz, 2.0 kHz … 40.0 kHz (500 Hz steps)
+- **Click any button** to toggle that tone on/off – multiple tones can play together.
+- **PLAY ALL** – instantly start every frequency at once (useful for stress tests).
+- **STOP ALL** – kill all tones with one click.
+- Visual feedback: active buttons are highlighted, and the status bar shows how many tones are playing.
+- Pure sine waves (low distortion) with a moderate gain to avoid clipping.
+- Works offline – just save the HTML file and open it in any modern browser (Chrome, Edge, Firefox, Safari).
 
-- **Concurrent playback** – Any number of tones can be played at the same time.
-- **Wide frequency range** – 1 Hz, 10 Hz, 100 Hz, then 1 kHz … 40 kHz in 1 kHz steps.
-- **Toggle on/off** – Click a frequency button to start it; click again to stop.
-- **Visual feedback** – Active buttons are highlighted; status bar shows active count and frequencies.
-- **Stop all** – One big red button silences everything instantly.
-- **No dependencies** – Pure HTML, CSS, and vanilla JavaScript.
+## How to Use
 
----
+1. Open the `index.html` file in your browser.
+2. Click any frequency button – the tone starts immediately.
+3. Click the same button again to stop that tone.
+4. Use **PLAY ALL** to enable every frequency at once.
+5. Use **STOP ALL** to silence everything.
 
-## 🚀 How to Use
+> **Note:** Frequencies above ~20 kHz may be inaudible on most consumer hardware. The app still generates them, but your speakers/headphones may not reproduce them.
 
-1. Clone the repository or download `index.html`.
-2. Open `index.html` in any modern browser (Chrome, Firefox, Safari, Edge).
-3. Click any frequency button to start that tone.
-4. Click an active button to stop that tone.
-5. Use the **STOP ALL** button to silence all oscillators.
+## Technical Details
 
-> ⚠️ **Note**:  
-> - Very low frequencies (1 Hz, 10 Hz) may be felt as vibrations rather than heard.  
-> - Frequencies above ~20 kHz may be inaudible on most consumer speakers/headphones.
+- Built with the Web Audio API.
+- Each frequency runs on its own `OscillatorNode` with a `GainNode` to control volume.
+- The gain per tone is set to `0.3` to reduce clipping when many tones are active.
+- All oscillers are of type `sine` for clean, harmonic‑free waveforms.
 
----
+## Compatibility
 
-## 📋 Frequency List
+- Works on all modern desktop and mobile browsers that support the Web Audio API.
+- On iOS, make sure the device is not in silent mode and that you interact with the page first (due to autoplay policies).
 
-The app includes the following frequencies (43 in total):
+## License
 
-- **1 Hz**, **10 Hz**, **100 Hz**
-- **1 kHz**, **2 kHz**, **3 kHz**, … **40 kHz** (every 1 kHz step)
-
-All tones are pure sine waves.
-
----
-
-## 🧠 Technical Details
-
-- **Audio engine**: Web Audio API (`OscillatorNode` + `GainNode` per tone).
-- **Per‑tone gain**: `0.3` to prevent clipping when many tones are active.
-- **Context handling**: AudioContext is created and resumed on first user click.
-- **Code structure**:  
-  - `ToneManager` – manages audio context, active oscillators, starting/stopping.  
-  - `UIManager` – builds the button grid, updates status, handles UI events.  
-  - Clean separation of concerns for easy maintenance.
+This project is open source and available under the [MIT License](LICENSE).
 
 ---
 
-## 🌐 Browser Compatibility
-
-Works in all browsers that support the Web Audio API:
-
-- ✅ Chrome (desktop & Android)
-- ✅ Firefox
-- ✅ Safari (desktop & iOS 15+)
-- ✅ Edge
-- ✅ Opera
-
----
-
-## 📄 License
-
-This project is licensed under the MIT License – feel free to use, modify, and distribute it.
-
----
-
-**Happy tone‑stacking!** 🎶
+*Enjoy exploring the world of frequencies!*
