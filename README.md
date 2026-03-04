@@ -2,9 +2,6 @@
 
 **PolyTone** is a minimalist web-based audio tool that lets you play multiple sine wave tones **simultaneously**. Toggle any frequency from **1 Hz to 40 kHz** on and off, with a pink‑noise inspired gain curve to balance the spectrum. Includes a master compressor and a sine‑wave tremolo for dynamic volume shaping.
 
-![screenshot](screenshot.png)  
-*(Add a screenshot of the interface here)*
-
 ---
 
 ## ✨ Features
