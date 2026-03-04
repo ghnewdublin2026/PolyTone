@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PolyTone · 1Hz–40kHz + pink gain + tremolo + compressor</title>
+    <title>PolyTone · 1Hz–40kHz + presets</title>
     <style>
         * {
             box-sizing: border-box;
@@ -147,6 +147,26 @@
             height: 20px;
             cursor: pointer;
         }
+        .preset-bar {
+            background: #dde5ec;
+            border-radius: 40px;
+            padding: 0.5rem 1.8rem;
+            margin-bottom: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .preset-select {
+            background: white;
+            border: 2px solid #9bb0c2;
+            border-radius: 40px;
+            padding: 0.4rem 2rem 0.4rem 1.5rem;
+            font-size: 1rem;
+            font-weight: 500;
+            color: #0f344f;
+            cursor: pointer;
+            flex: 0 1 300px;
+        }
         .freq-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
@@ -194,7 +214,7 @@
 <div class="card">
     <h1>
         🎛️ PolyTone
-        <small>1 Hz … 40 kHz · pink gain · tremolo + compressor</small>
+        <small>1 Hz … 40 kHz · pink gain · presets</small>
     </h1>
 
     <div class="status-bar">
@@ -203,6 +223,19 @@
             <button class="btn-play-all" id="playAllButton" aria-label="play all frequencies">▶ PLAY ALL</button>
             <button class="btn-stop" id="stopButton" aria-label="stop all tones">🔇 STOP ALL</button>
         </div>
+    </div>
+
+    <!-- preset dropdown -->
+    <div class="preset-bar">
+        <label for="presetSelect" style="font-weight:600;">🎛️ Preset:</label>
+        <select id="presetSelect" class="preset-select">
+            <option value="none">— None (manual) —</option>
+            <option value="all">All frequencies</option>
+            <option value="low">Low (1–100 Hz)</option>
+            <option value="mid">Mid (1–10 kHz)</option>
+            <option value="high">High (10–40 kHz)</option>
+            <option value="screenshot">10–21.5 kHz sweep (24 tones)</option>
+        </select>
     </div>
 
     <!-- compressor on/off -->
@@ -259,7 +292,6 @@
         };
 
         // ==================== FREQUENCY LIST ====================
-        // Updated to include 25 Hz and 50 Hz
         const lowFreqs = [1, 10, 25, 50, 100];
         const highFreqs = [];
         for (let f = 1000; f <= 40000; f += 500) highFreqs.push(f);
@@ -272,12 +304,27 @@
             return { freq, label };
         });
 
+        // ==================== PRESET DEFINITIONS ====================
+        const presets = {
+            all: allFreqs,
+            low: [1, 10, 25, 50, 100],
+            mid: allFreqs.filter(f => f >= 1000 && f <= 10000),
+            high: allFreqs.filter(f => f >= 10000),
+            screenshot: (() => {
+                // 10.0 kHz to 21.5 kHz in 500 Hz steps = 24 tones
+                const tones = [];
+                for (let f = 10000; f <= 21500; f += 500) tones.push(f);
+                return tones;
+            })()
+        };
+
         // ==================== TONE MANAGER ====================
         class ToneManager {
             constructor() {
                 this.audioCtx = null;
                 this.activeTones = new Map();
                 this.statusCallback = null;
+                this.buttonMap = new Map(); // freq -> button
 
                 this.compressorEnabled = false;
                 this.masterCompressor = null;
@@ -475,6 +522,21 @@
                 this.#updateStatus();
             }
 
+            // Apply a preset: stop all, then start each frequency in the preset list
+            async applyPreset(freqList) {
+                await this.ensureContext();
+                // Stop all current tones
+                this.stopAll();
+                // Start each frequency in preset
+                for (const freq of freqList) {
+                    const btn = this.buttonMap.get(freq);
+                    if (btn && !this.activeTones.has(freq)) {
+                        await this.#startTone(freq, btn, true);
+                    }
+                }
+                this.#updateStatus();
+            }
+
             async setCompressorEnabled(enabled) {
                 await this.reconfigureAll(enabled, this.tremoloEnabled, this.tremoloPeriod, this.tremoloDepth);
             }
@@ -507,8 +569,8 @@
         // ==================== UI MANAGER ====================
         class UIManager {
             constructor(containerId, statusSpanId, stopBtnId, playAllBtnId,
-                        compressorEnableId,
-                        tremEnableId, tremPeriodId, tremDepthId, toneManager) {
+                        compressorEnableId, tremEnableId, tremPeriodId, tremDepthId,
+                        presetSelectId, toneManager) {
                 this.container = document.getElementById(containerId);
                 this.statusSpan = document.getElementById(statusSpanId);
                 this.stopBtn = document.getElementById(stopBtnId);
@@ -517,6 +579,7 @@
                 this.tremEnable = document.getElementById(tremEnableId);
                 this.tremPeriod = document.getElementById(tremPeriodId);
                 this.tremDepth = document.getElementById(tremDepthId);
+                this.presetSelect = document.getElementById(presetSelectId);
                 this.toneManager = toneManager;
 
                 this.toneManager.onStatusChange((activeFreqs) => this.updateStatus(activeFreqs));
@@ -547,6 +610,18 @@
                 this.tremPeriod.addEventListener('input', updateTremolo);
                 this.tremDepth.addEventListener('input', updateTremolo);
 
+                // Preset dropdown
+                this.presetSelect.addEventListener('change', async (e) => {
+                    const presetKey = e.target.value;
+                    if (presetKey === 'none') return; // do nothing
+                    const freqList = presets[presetKey];
+                    if (freqList) {
+                        await this.toneManager.applyPreset(freqList);
+                    }
+                    // Reset dropdown to 'none' after applying (optional)
+                    this.presetSelect.value = 'none';
+                });
+
                 this.buttons = [];
             }
 
@@ -564,6 +639,7 @@
 
                     this.container.appendChild(btn);
                     this.buttons.push(btn);
+                    this.toneManager.buttonMap.set(freq, btn);
                 });
             }
 
@@ -592,6 +668,7 @@
             'tremoloEnable',
             'tremoloPeriod',
             'tremoloDepth',
+            'presetSelect',
             toneManager
         );
         uiManager.buildButtons(freqItems);
